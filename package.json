@@ -1,0 +1,27 @@
+{
+  "name": "call-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Call Web Application",
+  "scripts": {
+    "dev:admin": "pnpm --filter admin dev",
+    "dev:workbench": "pnpm --filter workbench dev",
+    "build:admin": "pnpm --filter admin build",
+    "build:workbench": "pnpm --filter workbench build",
+    "build": "pnpm build:admin && pnpm build:workbench"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "antd": "^5.12.0",
+    "@ant-design/icons": "^5.2.6",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "pnpm": "^8.0.0",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@types/node": "^20.10.6",
+    "typescript": "^5.3.3"
+  }
+}
