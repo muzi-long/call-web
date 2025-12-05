@@ -5,19 +5,37 @@ import { message } from 'antd'
 import { getToken, removeToken } from './auth'
 
 interface ImportMetaEnv {
-  readonly VITE_API_BASE_URL?: string
-  readonly VITE_ADMIN_API_BASE_URL?: string
-  readonly VITE_AUTH_API_BASE_URL?: string
   readonly VITE_API_DOMAIN?: string
 }
 
 /**
- * 创建请求实例
- * @param baseURL - API 基础地址
+ * 获取 API 基础地址
+ * 开发环境：返回空字符串，使用相对路径（通过 Vite 代理转发）
+ * 生产环境：返回实际域名
  */
-const createRequest = (baseURL: string): AxiosInstance => {
+const getBaseURL = (): string => {
+  // 开发环境使用代理，返回空字符串（使用相对路径）
+  if (import.meta.env.DEV) {
+    return ''
+  }
+
+  // 生产环境使用实际域名
+  const domain = import.meta.env.VITE_API_DOMAIN
+
+  if (!domain) {
+    console.warn('[request] VITE_API_DOMAIN 未配置，请求将使用相对路径')
+    return ''
+  }
+
+  return domain
+}
+
+/**
+ * 创建请求实例
+ */
+const createRequest = (): AxiosInstance => {
   const request: AxiosInstance = axios.create({
-    baseURL,
+    baseURL: getBaseURL(),
     timeout: 10000,
     headers: {
       'Content-Type': 'application/json',
@@ -106,29 +124,8 @@ const createRequest = (baseURL: string): AxiosInstance => {
   return request
 }
 
-// 获取 API 基础地址
-// admin 项目使用 VITE_ADMIN_API_BASE_URL，workbench 使用 VITE_API_BASE_URL
-// 如果没有配置，则根据环境自动判断
-const getBaseURL = (): string => {
-  // 优先使用项目特定的环境变量
-  const adminBaseURL = import.meta.env.VITE_ADMIN_API_BASE_URL
-  const apiBaseURL = import.meta.env.VITE_API_BASE_URL
-
-  if (adminBaseURL) {
-    return adminBaseURL
-  }
-
-  if (apiBaseURL) {
-    return apiBaseURL
-  }
-
-  // 默认值：根据当前路径判断（开发环境可以通过路径判断）
-  // 生产环境建议明确配置环境变量
-  return '/api'
-}
-
-// 创建默认请求实例（用于 workbench 或通用接口）
-const defaultRequest = createRequest(getBaseURL())
+// 创建请求实例
+const requestInstance = createRequest()
 
 // 请求方法类型定义
 interface RequestMethods {
@@ -140,32 +137,39 @@ interface RequestMethods {
 }
 
 // 创建请求方法
-const createRequestMethods = (instance: AxiosInstance): RequestMethods => ({
+// GET 请求：参数放在 query 中
+// DELETE 请求：URL 格式为 xxx/:id，id 从 params 中提取
+// POST/PUT/PATCH 请求：参数放在 body 中
+const requestMethods: RequestMethods = {
   get<T = any>(url: string, params?: any, config: AxiosRequestConfig = {}): Promise<T> {
-    return instance.get<T>(url, { params, ...config }).then((response) => response as T)
+    // GET 请求参数放在 query 中
+    return requestInstance.get<T>(url, { params, ...config }).then((response) => response as T)
   },
   post<T = any>(url: string, data?: any, config: AxiosRequestConfig = {}): Promise<T> {
-    return instance.post<T>(url, data, config).then((response) => response as T)
+    return requestInstance.post<T>(url, data, config).then((response) => response as T)
   },
   put<T = any>(url: string, data?: any, config: AxiosRequestConfig = {}): Promise<T> {
-    return instance.put<T>(url, data, config).then((response) => response as T)
+    return requestInstance.put<T>(url, data, config).then((response) => response as T)
   },
   delete<T = any>(url: string, params?: any, config: AxiosRequestConfig = {}): Promise<T> {
-    return instance.delete<T>(url, { params, ...config }).then((response) => response as T)
+    // DELETE 请求：URL 格式为 xxx/:id
+    // 如果 params 是对象且包含 id，则将 id 拼接到 URL 中
+    let deleteUrl = url
+    if (params && typeof params === 'object' && 'id' in params) {
+      deleteUrl = `${url}/${params.id}`
+    } else if (typeof params === 'number' || typeof params === 'string') {
+      // 如果 params 直接是 id 值
+      deleteUrl = `${url}/${params}`
+    }
+    return requestInstance.delete<T>(deleteUrl, config).then((response) => response as T)
   },
   patch<T = any>(url: string, data?: any, config: AxiosRequestConfig = {}): Promise<T> {
-    return instance.patch<T>(url, data, config).then((response) => response as T)
+    return requestInstance.patch<T>(url, data, config).then((response) => response as T)
   },
-})
-
-// 导出默认请求方法（用于 workbench）
-export default createRequestMethods(defaultRequest)
-
-// 导出创建请求实例的函数，用于创建特定 baseURL 的请求
-export const createRequestInstance = (baseURL: string) => {
-  const instance = createRequest(baseURL)
-  return createRequestMethods(instance)
 }
 
+// 导出请求方法
+export default requestMethods
+
 // 也可以直接导出 axios 实例，以便需要更灵活的使用
-export { defaultRequest as request }
+export { requestInstance as request }

@@ -1,8 +1,7 @@
 /**
  * 认证相关 API
- * 认证接口使用独立的请求工具，因为 /auth/* 不在 /admin/ 路径下
  */
-import authRequest from '@common/utils/auth-request'
+import request from '@common/utils/request'
 
 /**
  * 登录响应类型
@@ -19,7 +18,7 @@ export interface LoginResponse {
  * @returns 登录响应
  */
 export const login = async (username: string, password: string): Promise<LoginResponse> => {
-  const response = await authRequest.post<LoginResponse>('/auth/login', {
+  const response = await request.post<LoginResponse>('/auth/login', {
     username,
     password,
   })
@@ -30,6 +29,6 @@ export const login = async (username: string, password: string): Promise<LoginRe
  * 用户登出
  */
 export const logout = async (): Promise<void> => {
-  await authRequest.get('/auth/logout')
+  await request.get('/auth/logout')
 }
 

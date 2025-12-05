@@ -7,6 +7,11 @@
 
 import request from '@common/utils/request'
 
+// 使用示例：
+// Admin 接口：request.post('/admin/ent', data)
+// API 接口：request.get('/api/users', params)
+// 认证接口：request.post('/auth/login', data)
+
 // GET 请求示例
 export const getUserList = async (params) => {
     try {

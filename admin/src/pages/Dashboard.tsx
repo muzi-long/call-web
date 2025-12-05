@@ -1,9 +1,10 @@
 import { Layout, Menu, Typography, Button, Dropdown, MenuProps } from 'antd'
-import { UserOutlined, DashboardOutlined, LogoutOutlined } from '@ant-design/icons'
+import { UserOutlined, DashboardOutlined, LogoutOutlined, BankOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 import { logout } from '../api/auth'
 import { removeToken } from '@common/utils/auth'
 import { message } from 'antd'
+import Enterprise from './Enterprise'
 
 const { Header, Content, Sider } = Layout
 const { Title } = Typography
@@ -13,7 +14,7 @@ interface DashboardProps {
 }
 
 function Dashboard({ onLogout }: DashboardProps) {
-  const [selectedKey, setSelectedKey] = useState('1')
+  const [selectedKey, setSelectedKey] = useState('2')
 
   const handleLogout = async () => {
     try {
@@ -64,6 +65,11 @@ function Dashboard({ onLogout }: DashboardProps) {
               },
               {
                 key: '2',
+                icon: <BankOutlined />,
+                label: '企业管理',
+              },
+              {
+                key: '3',
                 icon: <UserOutlined />,
                 label: '用户管理',
               },
@@ -79,8 +85,19 @@ function Dashboard({ onLogout }: DashboardProps) {
               background: '#fff',
             }}
           >
-            <Title level={2}>欢迎使用 Admin 管理后台</Title>
-            <p>这是 Admin 项目的首页</p>
+            {selectedKey === '1' && (
+              <>
+                <Title level={2}>欢迎使用 Admin 管理后台</Title>
+                <p>这是 Admin 项目的首页</p>
+              </>
+            )}
+            {selectedKey === '2' && <Enterprise />}
+            {selectedKey === '3' && (
+              <>
+                <Title level={2}>用户管理</Title>
+                <p>用户管理功能待开发</p>
+              </>
+            )}
           </Content>
         </Layout>
       </Layout>

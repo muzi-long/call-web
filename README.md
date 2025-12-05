@@ -65,13 +65,7 @@ pnpm build
 
 ## 请求工具
 
-项目已封装了基于 Axios 的请求工具，位于 `common/utils/` 目录下，根据不同的接口路径提供了三种请求工具。
-
-### 请求工具分类
-
-1. **`request.ts`** - Workbench 项目使用，接口路径为 `/api/*`
-2. **`admin-request.ts`** - Admin 项目使用，接口路径为 `/admin/*`
-3. **`auth-request.ts`** - 认证接口使用，接口路径为 `/auth/*`
+项目已封装了基于 Axios 的请求工具，位于 `common/utils/request.ts`，使用统一的 baseURL，接口路径在调用时完整指定。
 
 ### 特性
 
@@ -80,38 +74,26 @@ pnpm build
 - ✅ 支持请求和响应拦截器
 - ✅ 统一的错误处理机制
 - ✅ 支持环境变量配置 API 基础地址
-- ✅ 根据项目类型自动使用不同的 baseURL
+- ✅ 自动添加认证 token 到请求头
 
 ### 使用方法
 
-#### Workbench 项目
+所有项目都使用同一个请求工具，接口路径在调用时完整指定：
 
 ```typescript
 import request from '@common/utils/request'
 
-// 调用 /api/* 下的接口
-const data = await request.get('/users', { page: 1, pageSize: 10 })
-const result = await request.post('/users', { name: 'John', age: 30 })
-```
+// 认证接口
+const response = await request.post('/auth/login', { username, password })
+await request.get('/auth/logout')
 
-#### Admin 项目
+// Admin 接口
+const data = await request.post('/admin/ent', { page: 1, page_size: 20 })
+await request.post('/admin/ent', { name: '企业名称' })
 
-```typescript
-import adminRequest from '@common/utils/admin-request'
-
-// 调用 /admin/* 下的接口
-const data = await adminRequest.get('/users', { page: 1, pageSize: 10 })
-const result = await adminRequest.post('/users', { name: 'John', age: 30 })
-```
-
-#### 认证接口（两个项目都可以使用）
-
-```typescript
-import authRequest from '@common/utils/auth-request'
-
-// 调用 /auth/* 下的接口
-const response = await authRequest.post('/auth/login', { username, password })
-await authRequest.get('/auth/logout')
+// Workbench 接口
+const result = await request.get('/api/users', { page: 1 })
+await request.post('/api/data', { name: 'John' })
 ```
 
 ### 错误处理
@@ -126,24 +108,29 @@ await authRequest.get('/auth/logout')
 在 `.env.development` 和 `.env.production` 文件中配置：
 
 ```env
-# API 域名（不包含路径，用于认证接口等公共接口）
-VITE_API_DOMAIN=http://localhost:8080
-
-# Admin 项目的 API 基础地址（admin 接口使用 /admin/*）
-VITE_ADMIN_API_BASE_URL=http://localhost:8080/admin
-
-# Workbench 项目的 API 基础地址（workbench 接口使用 /api/*）
-VITE_API_BASE_URL=http://localhost:8080/api
-
-# 认证接口的基础地址（可选，如果不配置则使用 VITE_API_DOMAIN）
-# VITE_AUTH_API_BASE_URL=http://localhost:8080
+# API 域名（不包含路径，所有接口都基于此域名）
+# 接口路径在调用时指定，如：/auth/login、/admin/ent、/api/users
+VITE_API_DOMAIN=http://127.0.0.1:61000
 ```
+
+### 跨域处理
+
+**开发环境**：
+- 使用 Vite 代理解决跨域问题
+- 请求使用相对路径（如 `/auth/login`），Vite 会自动代理到后端
+- 代理配置在 `vite.config.ts` 中，自动代理 `/auth`、`/admin`、`/api` 路径
+
+**生产环境**：
+- 使用实际域名（通过 `VITE_API_DOMAIN` 配置）
+- 需要后端配置 CORS 或使用同域部署
 
 ### 接口路径说明
 
-- **Admin 接口**: `domain/admin/*` - 使用 `admin-request.ts`
-- **Workbench 接口**: `domain/api/*` - 使用 `request.ts`
-- **认证接口**: `domain/auth/*` - 使用 `auth-request.ts`
+所有接口路径在调用时完整指定：
+
+- **认证接口**: `/auth/login`、`/auth/logout`
+- **Admin 接口**: `/admin/ent`、`/admin/agent` 等
+- **Workbench 接口**: `/api/users`、`/api/data` 等
 
 ### 请求拦截器
 
@@ -163,7 +150,7 @@ request.interceptors.request.use((config) => {
 
 项目已配置路径别名，方便引用共享代码：
 
-- `@common` → `common` (公共工具)
+- `@common` → `common` (公共工具目录，直接包含 utils)
 - `@` → 当前项目的 `src` 目录
 
 详细使用示例请参考 `admin/src/utils/request.example.js` 或 `workbench/src/utils/request.example.js` 文件。
