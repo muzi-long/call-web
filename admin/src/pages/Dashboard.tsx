@@ -1,31 +1,32 @@
 import { Layout, Menu, Typography, Button, Dropdown, MenuProps } from 'antd'
 import { UserOutlined, DashboardOutlined, LogoutOutlined, BankOutlined } from '@ant-design/icons'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { logout } from '../api/auth'
 import { removeToken } from '@common/utils/auth'
 import { message } from 'antd'
 import Enterprise from './Enterprise'
+import Agent from './Agent'
+import { ROUTE_PATHS } from '../routes'
 
 const { Header, Content, Sider } = Layout
 const { Title } = Typography
 
-interface DashboardProps {
-  onLogout?: () => void
-}
-
-function Dashboard({ onLogout }: DashboardProps) {
+function Dashboard() {
   const [selectedKey, setSelectedKey] = useState('2')
+  const navigate = useNavigate()
 
   const handleLogout = async () => {
     try {
       await logout()
       removeToken()
       message.success('已退出登录')
-      onLogout?.()
+      // 登出后跳转到登录页
+      navigate(ROUTE_PATHS.LOGIN, { replace: true })
     } catch (error) {
       // 即使登出失败，也清除本地 token
       removeToken()
-      onLogout?.()
+      navigate(ROUTE_PATHS.LOGIN, { replace: true })
     }
   }
 
@@ -92,12 +93,7 @@ function Dashboard({ onLogout }: DashboardProps) {
               </>
             )}
             {selectedKey === '2' && <Enterprise />}
-            {selectedKey === '3' && (
-              <>
-                <Title level={2}>用户管理</Title>
-                <p>用户管理功能待开发</p>
-              </>
-            )}
+            {selectedKey === '3' && <Agent />}
           </Content>
         </Layout>
       </Layout>

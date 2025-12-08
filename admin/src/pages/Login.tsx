@@ -1,18 +1,17 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Form, Input, Button, Card, Typography, message } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { login } from '../api/auth'
 import { setToken } from '@common/utils/auth'
+import { ROUTE_PATHS } from '../routes'
 
 const { Title } = Typography
 
-interface LoginProps {
-  onLoginSuccess?: () => void
-}
-
-function Login({ onLoginSuccess }: LoginProps) {
+function Login() {
   const [loading, setLoading] = useState(false)
   const [form] = Form.useForm()
+  const navigate = useNavigate()
 
   const handleSubmit = async (values: { username: string; password: string }) => {
     try {
@@ -24,7 +23,8 @@ function Login({ onLoginSuccess }: LoginProps) {
       setToken(response.token, response.exp)
 
       message.success('登录成功')
-      onLoginSuccess?.()
+      // 登录成功后跳转到 Dashboard
+      navigate(ROUTE_PATHS.DASHBOARD, { replace: true })
     } catch (error) {
       // 错误已经在 request 拦截器中处理了
       console.error('登录失败:', error)

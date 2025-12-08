@@ -152,3 +152,11 @@ export const bindAgentToEnterprise = async (params: EnterpriseAgentBindParams): 
 export const getEnterpriseAgents = async (params: EnterpriseAgentsParams): Promise<AgentInfo[]> => {
   return await request.get<AgentInfo[]>('/admin/ent/agents', params)
 }
+
+/**
+ * 获取所有企业信息（不分页）
+ * 用于下拉选择等场景
+ */
+export const getAllEnterprises = async (): Promise<EnterpriseInfo[]> => {
+  return await request.get<EnterpriseInfo[]>('/admin/ent/all')
+}
