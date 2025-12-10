@@ -45,7 +45,7 @@ function Agent() {
   const enterprisesLoadedRef = useRef(false)
 
   // 加载 Agent 列表
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (force = false) => {
     const currentParams = {
       page: pagination.page,
       page_size: pagination.page_size,
@@ -57,7 +57,7 @@ function Agent() {
     }
     const paramsKey = JSON.stringify(currentParams)
 
-    if (loadingRef.current || prevParamsRef.current === paramsKey) {
+    if (loadingRef.current || (!force && prevParamsRef.current === paramsKey)) {
       return
     }
 
@@ -187,6 +187,9 @@ function Agent() {
         }
         await updateAgent(updateData)
         message.success('更新成功')
+        handleCloseModal()
+        loadData(true) // 强制刷新列表
+        return
       } else {
         // 创建
         const createData: AgentCreateParams = {
@@ -206,7 +209,7 @@ function Agent() {
         message.success('创建成功')
       }
       handleCloseModal()
-      loadData()
+      loadData(true) // 强制刷新列表
     } catch (error) {
       console.error('操作失败:', error)
     }
@@ -217,7 +220,7 @@ function Agent() {
     try {
       await deleteAgent({ id })
       message.success('删除成功')
-      loadData()
+      loadData(true) // 强制刷新列表
     } catch (error) {
       console.error('删除失败:', error)
     }
@@ -253,11 +256,6 @@ function Agent() {
       key: 'phone',
     },
     {
-      title: '接听手机',
-      dataIndex: 'mobile',
-      key: 'mobile',
-    },
-    {
       title: '状态',
       dataIndex: 'disabled',
       key: 'disabled',
@@ -282,6 +280,11 @@ function Agent() {
         }
         return typeMap[answerType] || answerType
       },
+    },
+    {
+      title: '接听手机',
+      dataIndex: 'mobile',
+      key: 'mobile',
     },
     {
       title: 'SIP ID',
@@ -468,6 +471,7 @@ function Agent() {
           <Form.Item
             name="email"
             label="邮箱"
+            rules={[{ required: true, message: '请输入邮箱' }]}
           >
             <Input placeholder="请输入邮箱" />
           </Form.Item>
@@ -475,6 +479,7 @@ function Agent() {
           <Form.Item
             name="phone"
             label="手机号"
+            rules={[{ required: true, message: '请输入手机号' }]}
           >
             <Input placeholder="请输入手机号" />
           </Form.Item>

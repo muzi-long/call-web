@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Table,
   Button,
@@ -11,7 +12,7 @@ import {
   Popconfirm,
   Tag,
 } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import {
   getEnterpriseList,
@@ -28,6 +29,7 @@ import { formatDateTime } from '@common/utils/date'
 const { Search } = Input
 
 function Enterprise() {
+  const navigate = useNavigate()
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [dataSource, setDataSource] = useState<EnterpriseInfo[]>([])
@@ -134,11 +136,15 @@ function Enterprise() {
       form.setFieldsValue({
         name: record.name,
         status: record.status,
-        agent_id: record.owner_agent_id,
+        // 如果所有者是0、null或undefined，则设置为undefined，显示为未选择
+        agent_id: record.owner_agent_id && record.owner_agent_id !== 0 ? record.owner_agent_id : undefined,
       })
     } else {
       setEditingRecord(null)
       form.resetFields()
+      form.setFieldsValue({
+        agent_id: undefined, // 新增时默认为未选择
+      })
     }
     setModalVisible(true)
   }
@@ -246,10 +252,18 @@ function Enterprise() {
     {
       title: '操作',
       key: 'action',
-      width: 150,
+      width: 200,
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => navigate(`/enterprise/${record.id}`)}
+          >
+            查看详情
+          </Button>
           <Button
             type="link"
             size="small"

@@ -2,7 +2,13 @@ import { lazy } from 'react'
 import { RouteObject } from 'react-router-dom'
 import Login from '../pages/Login'
 import Dashboard from '../pages/Dashboard'
+import Enterprise from '../pages/Enterprise'
+import EnterpriseDetail from '../pages/EnterpriseDetail'
+import Agent from '../pages/Agent'
+import Trunk from '../pages/Trunk'
+import TrunkNumber from '../pages/TrunkNumber'
 import { ProtectedRoute } from '../components/ProtectedRoute'
+import AdminLayout from '../components/AdminLayout'
 
 /**
  * 路由配置
@@ -25,7 +31,9 @@ export const routes: RouteObject[] = [
     path: '/',
     element: (
       <ProtectedRoute>
-        <Dashboard />
+        <AdminLayout>
+          <Dashboard />
+        </AdminLayout>
       </ProtectedRoute>
     ),
   },
@@ -33,19 +41,62 @@ export const routes: RouteObject[] = [
     path: '/dashboard',
     element: (
       <ProtectedRoute>
-        <Dashboard />
+        <AdminLayout>
+          <Dashboard />
+        </AdminLayout>
       </ProtectedRoute>
     ),
   },
-  // 后续可以在这里添加更多路由
-  // {
-  //   path: '/enterprise',
-  //   element: (
-  //     <ProtectedRoute>
-  //       <Enterprise />
-  //     </ProtectedRoute>
-  //   ),
-  // },
+  {
+    path: '/enterprise',
+    element: (
+      <ProtectedRoute>
+        <AdminLayout>
+          <Enterprise />
+        </AdminLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/enterprise/:id',
+    element: (
+      <ProtectedRoute>
+        <AdminLayout>
+          <EnterpriseDetail />
+        </AdminLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/agent',
+    element: (
+      <ProtectedRoute>
+        <AdminLayout>
+          <Agent />
+        </AdminLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/trunk',
+    element: (
+      <ProtectedRoute>
+        <AdminLayout>
+          <Trunk />
+        </AdminLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/trunk-number',
+    element: (
+      <ProtectedRoute>
+        <AdminLayout>
+          <TrunkNumber />
+        </AdminLayout>
+      </ProtectedRoute>
+    ),
+  },
 ]
 
 /**
@@ -56,7 +107,10 @@ export const ROUTE_PATHS = {
   LOGIN: '/login',
   DASHBOARD: '/dashboard',
   HOME: '/',
-  // 后续可以添加更多路径
-  // ENTERPRISE: '/enterprise',
+  ENTERPRISE: '/enterprise',
+  ENTERPRISE_DETAIL: (id: number) => `/enterprise/${id}`,
+  AGENT: '/agent',
+  TRUNK: '/trunk',
+  TRUNK_NUMBER: '/trunk-number',
 } as const
 

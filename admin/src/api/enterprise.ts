@@ -68,11 +68,12 @@ export interface EnterpriseDeleteParams {
 }
 
 /**
- * 绑定Agent到企业请求参数
+ * 绑定或解绑Agent到企业请求参数
  */
 export interface EnterpriseAgentBindParams {
   ent_id: number
   agent_id: number
+  action?: 'bind' | 'unbind' // 操作类型：bind-绑定，unbind-解绑，默认为bind
 }
 
 /**
@@ -138,10 +139,54 @@ export const deleteEnterprise = async (params: EnterpriseDeleteParams): Promise<
 }
 
 /**
- * 绑定Agent到企业
+ * 绑定或解绑Agent到企业
+ * 
+ * 根据call-api的接口设计，支持以下两种方式：
+ * 1. 统一使用 POST 方法，通过 action 参数区分绑定和解绑（推荐）
+ * 2. 绑定使用 POST，解绑使用 DELETE（如果后端支持）
+ * 
+ * @param params - 请求参数
+ *   - ent_id: 企业ID
+ *   - agent_id: Agent ID
+ *   - action: 操作类型，'bind' 表示绑定，'unbind' 表示解绑，默认为 'bind'
+ * @returns Promise<void>
+ * 
+ * @example
+ * // 绑定Agent到企业
+ * await bindAgentToEnterprise({ ent_id: 1, agent_id: 2 })
+ * await bindAgentToEnterprise({ ent_id: 1, agent_id: 2, action: 'bind' })
+ * 
+ * // 解绑Agent从企业
+ * await bindAgentToEnterprise({ ent_id: 1, agent_id: 2, action: 'unbind' })
  */
 export const bindAgentToEnterprise = async (params: EnterpriseAgentBindParams): Promise<void> => {
-  return await request.post<void>('/admin/ent/agent', params)
+  const { action = 'bind', ent_id, agent_id } = params
+
+  // 统一使用 POST 方法，通过 action 参数区分绑定和解绑
+  // 如果后端接口设计为：POST /admin/ent/agent，body: { ent_id, agent_id, action: 'bind'|'unbind' }
+  return await request.post<void>('/admin/ent/agent', {
+    ent_id,
+    agent_id,
+    action
+  })
+}
+
+/**
+ * 绑定Agent到企业（便捷方法）
+ * @param params - 请求参数，包含 ent_id 和 agent_id
+ * @returns Promise<void>
+ */
+export const bindAgent = async (params: Omit<EnterpriseAgentBindParams, 'action'>): Promise<void> => {
+  return await bindAgentToEnterprise({ ...params, action: 'bind' })
+}
+
+/**
+ * 解绑Agent从企业（便捷方法）
+ * @param params - 请求参数，包含 ent_id 和 agent_id
+ * @returns Promise<void>
+ */
+export const unbindAgent = async (params: Omit<EnterpriseAgentBindParams, 'action'>): Promise<void> => {
+  return await bindAgentToEnterprise({ ...params, action: 'unbind' })
 }
 
 /**
@@ -159,4 +204,18 @@ export const getEnterpriseAgents = async (params: EnterpriseAgentsParams): Promi
  */
 export const getAllEnterprises = async (): Promise<EnterpriseInfo[]> => {
   return await request.get<EnterpriseInfo[]>('/admin/ent/all')
+}
+
+/**
+ * 获取企业详情请求参数
+ */
+export interface EnterpriseDetailParams {
+  id: number
+}
+
+/**
+ * 获取企业详情
+ */
+export const getEnterpriseDetail = async (params: EnterpriseDetailParams): Promise<EnterpriseInfo> => {
+  return await request.get<EnterpriseInfo>(`/admin/ent/${params.id}`)
 }
