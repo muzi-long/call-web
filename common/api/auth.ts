@@ -1,7 +1,8 @@
 /**
  * 认证相关 API
+ * 通用的认证接口，供 admin 和 workbench 共同使用
  */
-import request from '@common/utils/request'
+import request from '../utils/request'
 
 /**
  * 登录响应类型

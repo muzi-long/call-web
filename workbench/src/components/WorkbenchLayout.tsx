@@ -1,5 +1,5 @@
 import { Layout, Menu, Typography, Button, Dropdown, MenuProps } from 'antd'
-import { UserOutlined, DashboardOutlined, LogoutOutlined, BankOutlined, ApiOutlined, PhoneOutlined } from '@ant-design/icons'
+import { UserOutlined, DashboardOutlined, LogoutOutlined, PhoneOutlined } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { logout } from '@common/api/auth'
 import { removeToken } from '@common/utils/auth'
@@ -9,27 +9,21 @@ import { ROUTE_PATHS } from '../routes'
 const { Header, Content, Sider } = Layout
 const { Title } = Typography
 
-interface AdminLayoutProps {
+interface WorkbenchLayoutProps {
   children: React.ReactNode
 }
 
-function AdminLayout({ children }: AdminLayoutProps) {
+function WorkbenchLayout({ children }: WorkbenchLayoutProps) {
   const navigate = useNavigate()
   const location = useLocation()
 
   // 根据当前路由确定选中的菜单项
   const getSelectedKey = () => {
-    if (location.pathname.startsWith('/enterprise')) {
+    if (location.pathname.startsWith('/trunk-number')) {
       return '2'
     }
-    if (location.pathname.startsWith('/agent')) {
-      return '3'
-    }
-    if (location.pathname.startsWith('/trunk-number')) {
-      return '4-2'
-    }
-    if (location.pathname.startsWith('/trunk')) {
-      return '4-1'
+    if (location.pathname.startsWith('/dashboard')) {
+      return '1'
     }
     return '1'
   }
@@ -52,12 +46,6 @@ function AdminLayout({ children }: AdminLayoutProps) {
     if (key === '1') {
       navigate(ROUTE_PATHS.DASHBOARD)
     } else if (key === '2') {
-      navigate(ROUTE_PATHS.ENTERPRISE)
-    } else if (key === '3') {
-      navigate(ROUTE_PATHS.AGENT)
-    } else if (key === '4-1') {
-      navigate(ROUTE_PATHS.TRUNK)
-    } else if (key === '4-2') {
       navigate(ROUTE_PATHS.TRUNK_NUMBER)
     }
   }
@@ -75,7 +63,7 @@ function AdminLayout({ children }: AdminLayoutProps) {
     <Layout style={{ minHeight: '100vh' }}>
       <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#001529' }}>
         <Title level={3} style={{ color: '#fff', margin: 0 }}>
-          Admin 管理后台
+          Workbench 工作台
         </Title>
         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
           <Button type="text" style={{ color: '#fff' }}>
@@ -98,30 +86,8 @@ function AdminLayout({ children }: AdminLayoutProps) {
               },
               {
                 key: '2',
-                icon: <BankOutlined />,
-                label: '企业管理',
-              },
-              {
-                key: '3',
-                icon: <UserOutlined />,
-                label: '用户管理',
-              },
-              {
-                key: '4',
-                icon: <ApiOutlined />,
-                label: '线路管理',
-                children: [
-                  {
-                    key: '4-1',
-                    icon: <ApiOutlined />,
-                    label: '线路管理',
-                  },
-                  {
-                    key: '4-2',
-                    icon: <PhoneOutlined />,
-                    label: '号码管理',
-                  },
-                ],
+                icon: <PhoneOutlined />,
+                label: '中继号码',
               },
             ]}
           />
@@ -143,5 +109,5 @@ function AdminLayout({ children }: AdminLayoutProps) {
   )
 }
 
-export default AdminLayout
+export default WorkbenchLayout
 

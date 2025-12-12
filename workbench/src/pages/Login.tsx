@@ -50,7 +50,7 @@ function Login() {
         }}
       >
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Title level={2}>Admin 管理后台</Title>
+          <Title level={2}>Workbench 工作台</Title>
           <p style={{ color: '#666', marginTop: 8 }}>请登录您的账户</p>
         </div>
 

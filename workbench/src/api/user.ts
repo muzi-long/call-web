@@ -1,0 +1,54 @@
+/**
+ * 用户相关 API
+ * workbench 专用的用户接口
+ */
+import request from '@common/utils/request'
+
+/**
+ * 企业信息类型
+ */
+export interface Enterprise {
+  id: number
+  name: string
+  status: number
+  owner_agent_id: number
+  is_current: number
+  join_at: string
+  created_at: string
+  updated_at: string
+}
+
+/**
+ * 用户信息类型
+ */
+export interface UserInfo {
+  id: number
+  username: string
+  phone?: string
+  email?: string
+  display_name?: string
+  answer_type?: string
+  sip_id?: string
+  sip_password?: string
+  mobile?: string
+  enterprises?: Enterprise[]
+}
+
+/**
+ * 获取当前登录用户信息
+ * @returns 用户信息
+ */
+export const getUserInfo = async (): Promise<UserInfo> => {
+  const response = await request.get<UserInfo>('/api/user/profile')
+  return response
+}
+
+/**
+ * 切换当前企业
+ * @param entId - 企业ID
+ * @returns Promise<void>
+ */
+export const switchCurrentEnterprise = async (entId: number): Promise<void> => {
+  await request.put<void>('/api/user/switch-enterprise', { ent_id: entId })
+}
+
