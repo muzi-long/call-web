@@ -283,6 +283,14 @@ function TrunkNumber() {
     }
   }
 
+  const formatRate = (value?: number) => {
+    if (value === undefined || value === null) return '-'
+    const n = Number(value)
+    if (Number.isNaN(n)) return '-'
+    // 最多保留 4 位小数，同时去掉无意义的尾随 0
+    return n.toFixed(4).replace(/\.?0+$/, '')
+  }
+
   // 表格列定义
   const columns: ColumnsType<TrunkNumberInfo> = [
     {
@@ -299,6 +307,16 @@ function TrunkNumber() {
       render: (trunkId: number) => {
         const trunk = allTrunks.find(t => t.id === trunkId)
         return trunk ? `${trunk.name} (${trunk.ip}:${trunk.port})` : trunkId || '-'
+      },
+    },
+    {
+      title: '企业',
+      dataIndex: 'ent_id',
+      key: 'ent_id',
+      width: 200,
+      render: (entId: number) => {
+        const enterprise = allEnterprises.find(e => e.id === entId)
+        return enterprise ? enterprise.name : entId || '-'
       },
     },
     {
@@ -333,6 +351,23 @@ function TrunkNumber() {
         }
         const config = directionMap[direction] || { text: direction, color: 'default' }
         return <Tag color={config.color}>{config.text}</Tag>
+      },
+    },
+    {
+      title: '费用',
+      key: 'cost',
+      width: 260,
+      render: (_, record) => {
+        const cost = record.cost
+        if (!cost) return '-'
+        return (
+          <Space direction="vertical" size={0}>
+            <div>呼出：{formatRate(cost.call_out_rate)} 元 / {cost.call_out_cycle ?? '-'} 秒</div>
+            <div>呼出售价：{formatRate(cost.call_out_sale_rate)} 元 / {cost.call_out_sale_cycle ?? '-'} 秒</div>
+            <div>呼入：{formatRate(cost.call_in_rate)} 元 / {cost.call_in_cycle ?? '-'} 秒</div>
+            <div>呼入售价：{formatRate(cost.call_in_sale_rate)} 元 / {cost.call_in_sale_cycle ?? '-'} 秒</div>
+          </Space>
+        )
       },
     },
     {

@@ -46,7 +46,7 @@ function EnterpriseDetail() {
   const [trunkNumbersTotal, setTrunkNumbersTotal] = useState(0)
   const [trunkNumbersPagination, setTrunkNumbersPagination] = useState({ page: 1, page_size: 20 })
   const [allTrunks, setAllTrunks] = useState<TrunkInfo[]>([])
-  
+
   // 用于防止重复请求
   const loadingRef = useRef(false)
   const agentsLoadingRef = useRef(false)
@@ -236,6 +236,13 @@ function EnterpriseDetail() {
     }
   }, [id, trunkNumbersPagination.page, trunkNumbersPagination.page_size, loadEnterpriseTrunkNumbers])
 
+  const formatRate = (value?: number) => {
+    if (value === undefined || value === null) return '-'
+    const n = Number(value)
+    if (Number.isNaN(n)) return '-'
+    return n.toFixed(4).replace(/\.?0+$/, '')
+  }
+
   // 中继号码表格列定义
   const trunkNumberColumns: ColumnsType<TrunkNumberInfo> = [
     {
@@ -284,6 +291,23 @@ function EnterpriseDetail() {
         }
         const config = directionMap[direction] || { text: direction, color: 'default' }
         return <Tag color={config.color}>{config.text}</Tag>
+      },
+    },
+    {
+      title: '费用',
+      key: 'cost',
+      width: 260,
+      render: (_, record) => {
+        const cost = record.cost
+        if (!cost) return '-'
+        return (
+          <Space direction="vertical" size={0}>
+            <div>呼出：{formatRate(cost.call_out_rate)} 元 / {cost.call_out_cycle ?? '-'} 秒</div>
+            <div>呼出售价：{formatRate(cost.call_out_sale_rate)} 元 / {cost.call_out_sale_cycle ?? '-'} 秒</div>
+            <div>呼入：{formatRate(cost.call_in_rate)} 元 / {cost.call_in_cycle ?? '-'} 秒</div>
+            <div>呼入售价：{formatRate(cost.call_in_sale_rate)} 元 / {cost.call_in_sale_cycle ?? '-'} 秒</div>
+          </Space>
+        )
       },
     },
     {
@@ -455,7 +479,7 @@ function EnterpriseDetail() {
         </Descriptions>
       </Card>
 
-      <Card 
+      <Card
         title="企业下的Agent列表"
         extra={
           <Button
