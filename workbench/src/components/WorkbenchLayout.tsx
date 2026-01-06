@@ -1,21 +1,33 @@
 import { Layout, Menu, Typography, Button, Dropdown, MenuProps } from 'antd'
 import { UserOutlined, DashboardOutlined, LogoutOutlined, PhoneOutlined } from '@ant-design/icons'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { logout } from '@common/api/auth'
 import { removeToken } from '@common/utils/auth'
 import { message } from 'antd'
 import { ROUTE_PATHS } from '../routes'
+import { useUser } from '../contexts/UserContext'
+import { WebRTCProvider, useWebRTC } from '../contexts/WebRTCContext'
+import IncomingCallModal from './IncomingCallModal'
+import CallPanel from './CallPanel'
+import PhoneStatusBar from './PhoneStatusBar'
 
 const { Header, Content, Sider } = Layout
 const { Title } = Typography
 
-interface WorkbenchLayoutProps {
-  children: React.ReactNode
-}
-
-function WorkbenchLayout({ children }: WorkbenchLayoutProps) {
+/**
+ * 内部布局组件（使用 WebRTC Context）
+ */
+function WorkbenchLayoutInner() {
   const navigate = useNavigate()
   const location = useLocation()
+  const {
+    currentCall,
+    incomingCall,
+    answerCall,
+    hangupCall,
+    toggleMute,
+    sendDTMF,
+  } = useWebRTC()
 
   // 根据当前路由确定选中的菜单项
   const getSelectedKey = () => {
@@ -50,6 +62,14 @@ function WorkbenchLayout({ children }: WorkbenchLayoutProps) {
     }
   }
 
+  const handleAnswerCall = () => {
+    answerCall()
+  }
+
+  const handleRejectCall = () => {
+    hangupCall()
+  }
+
   const userMenuItems: MenuProps['items'] = [
     {
       key: 'logout',
@@ -65,12 +85,15 @@ function WorkbenchLayout({ children }: WorkbenchLayoutProps) {
         <Title level={3} style={{ color: '#fff', margin: 0 }}>
           Workbench 工作台
         </Title>
-        <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-          <Button type="text" style={{ color: '#fff' }}>
-            <UserOutlined /> 用户
-          </Button>
-        </Dropdown>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+            <Button type="text" style={{ color: '#fff' }}>
+              <UserOutlined /> 用户
+            </Button>
+          </Dropdown>
+        </div>
       </Header>
+
       <Layout>
         <Sider width={200} style={{ background: '#fff' }}>
           <Menu
@@ -92,20 +115,58 @@ function WorkbenchLayout({ children }: WorkbenchLayoutProps) {
             ]}
           />
         </Sider>
-        <Layout style={{ padding: '24px' }}>
+        <Layout style={{ padding: '24px', background: '#f0f2f5' }}>
+          {/* 电话状态栏和通话面板容器 */}
+          <div style={{ position: 'relative', marginBottom: 16 }}>
+            {/* 电话状态栏 */}
+            <PhoneStatusBar />
+
+            {/* 通话控制面板 - 悬浮在拨号按钮下方 */}
+            <CallPanel
+              visible={!!currentCall && currentCall.status !== 'ringing'}
+              callInfo={currentCall}
+              onHangup={hangupCall}
+              onToggleMute={toggleMute}
+              onSendDTMF={sendDTMF}
+            />
+          </div>
+
           <Content
             style={{
               padding: 24,
               margin: 0,
               minHeight: 280,
               background: '#fff',
+              borderRadius: 8,
             }}
           >
-            {children}
+            <Outlet />
           </Content>
         </Layout>
       </Layout>
+
+      {/* 来电弹窗 */}
+      <IncomingCallModal
+        visible={!!incomingCall && incomingCall.status === 'ringing'}
+        callerNumber={incomingCall?.remoteNumber || ''}
+        callerName={incomingCall?.remoteName}
+        onAnswer={handleAnswerCall}
+        onReject={handleRejectCall}
+      />
     </Layout>
+  )
+}
+
+/**
+ * 外部布局组件（提供 WebRTC Context）
+ */
+function WorkbenchLayout() {
+  const { userInfo } = useUser()
+
+  return (
+    <WebRTCProvider userInfo={userInfo}>
+      <WorkbenchLayoutInner />
+    </WebRTCProvider>
   )
 }
 

@@ -31,6 +31,7 @@ export interface UserInfo {
   sip_id?: string
   sip_password?: string
   mobile?: string
+  domain?: string
   enterprises?: Enterprise[]
 }
 
@@ -50,5 +51,20 @@ export const getUserInfo = async (): Promise<UserInfo> => {
  */
 export const switchCurrentEnterprise = async (entId: number): Promise<void> => {
   await request.put<void>('/api/user/switch-enterprise', { ent_id: entId })
+}
+
+/**
+ * 更新用户设置
+ * @param settings - 设置参数
+ * @returns Promise<void>
+ */
+export interface UserSettings {
+  answer_type?: string
+  mobile?: string
+  [key: string]: any
+}
+
+export const updateUserSettings = async (settings: UserSettings): Promise<void> => {
+  await request.put<void>('/api/user/settings', settings)
 }
 

@@ -1,40 +1,16 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { Card, Descriptions, Typography, Spin, message, Table, Tag, Space, Button, Modal } from 'antd'
 import { UserOutlined, BankOutlined, SwapOutlined } from '@ant-design/icons'
-import { getUserInfo, switchCurrentEnterprise, type UserInfo, type Enterprise } from '../api/user'
+import { switchCurrentEnterprise, type Enterprise } from '../api/user'
+import { useUser } from '../contexts/UserContext'
 import { formatDateTime } from '@common/utils/date'
 import type { ColumnsType } from 'antd/es/table'
 
 const { Title } = Typography
 
 function Dashboard() {
-  const [loading, setLoading] = useState(true)
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
+  const { userInfo, loading, refreshUserInfo } = useUser()
   const [switchingIds, setSwitchingIds] = useState<Set<number>>(new Set())
-  const hasFetched = useRef(false)
-
-  const fetchUserInfo = async () => {
-    try {
-      setLoading(true)
-      const data = await getUserInfo()
-      setUserInfo(data)
-    } catch (error) {
-      console.error('获取用户信息失败:', error)
-      message.error('获取用户信息失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    // 防止 React.StrictMode 导致的重复请求
-    if (hasFetched.current) {
-      return
-    }
-
-    hasFetched.current = true
-    fetchUserInfo()
-  }, [])
 
   // 切换当前企业
   const handleSwitchEnterprise = async (entId: number, enterpriseName: string) => {
@@ -47,17 +23,9 @@ function Dashboard() {
         try {
           setSwitchingIds((prev) => new Set(prev).add(entId))
           await switchCurrentEnterprise(entId)
-          message.success('切换企业成功')
-          // 只更新企业列表的 is_current 状态，不更新个人信息
-          if (userInfo && userInfo.enterprises) {
-            setUserInfo({
-              ...userInfo,
-              enterprises: userInfo.enterprises.map((ent) => ({
-                ...ent,
-                is_current: ent.id === entId ? 1 : 0,
-              })),
-            })
-          }
+          message.success(`已切换到企业: ${enterpriseName}`)
+          // 刷新用户信息以获取最新的企业状态
+          await refreshUserInfo()
         } catch (error) {
           console.error('切换企业失败:', error)
           message.error('切换企业失败')

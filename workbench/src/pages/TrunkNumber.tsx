@@ -78,12 +78,6 @@ function TrunkNumber() {
       },
     },
     {
-      title: '中继线路ID',
-      dataIndex: 'trunk_id',
-      key: 'trunk_id',
-      width: 120,
-    },
-    {
       title: '过期时间',
       dataIndex: 'expiration_at',
       key: 'expiration_at',

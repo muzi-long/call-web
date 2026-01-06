@@ -1,9 +1,10 @@
-import { RouteObject } from 'react-router-dom'
+import { RouteObject, Navigate } from 'react-router-dom'
 import Login from '../pages/Login'
 import Dashboard from '../pages/Dashboard'
 import TrunkNumber from '../pages/TrunkNumber'
 import { ProtectedRoute } from '../components/ProtectedRoute'
 import WorkbenchLayout from '../components/WorkbenchLayout'
+import { UserProvider } from '../contexts/UserContext'
 
 /**
  * 路由配置
@@ -22,31 +23,25 @@ export const routes: RouteObject[] = [
     path: '/',
     element: (
       <ProtectedRoute>
-        <WorkbenchLayout>
-          <Dashboard />
-        </WorkbenchLayout>
+        <UserProvider>
+          <WorkbenchLayout />
+        </UserProvider>
       </ProtectedRoute>
     ),
-  },
-  {
-    path: '/dashboard',
-    element: (
-      <ProtectedRoute>
-        <WorkbenchLayout>
-          <Dashboard />
-        </WorkbenchLayout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: '/trunk-number',
-    element: (
-      <ProtectedRoute>
-        <WorkbenchLayout>
-          <TrunkNumber />
-        </WorkbenchLayout>
-      </ProtectedRoute>
-    ),
+    children: [
+      {
+        index: true,
+        element: <Navigate to="/dashboard" replace />,
+      },
+      {
+        path: 'dashboard',
+        element: <Dashboard />,
+      },
+      {
+        path: 'trunk-number',
+        element: <TrunkNumber />,
+      },
+    ],
   },
 ]
 
