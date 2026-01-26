@@ -5,6 +5,7 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { login } from '@common/api/auth'
 import { setToken } from '@common/utils/auth'
 import { ROUTE_PATHS } from '../routes'
+import loginBg from '@common/static/login-bg.png'
 
 const { Title } = Typography
 
@@ -40,7 +41,10 @@ function Login() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        backgroundImage: `url(${loginBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
       }}
     >
       <Card
