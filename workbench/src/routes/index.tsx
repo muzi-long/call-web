@@ -2,6 +2,7 @@ import { RouteObject, Navigate } from 'react-router-dom'
 import Login from '../pages/Login'
 import Dashboard from '../pages/Dashboard'
 import TrunkNumber from '../pages/TrunkNumber'
+import CallTask from '../pages/CallTask'
 import { ProtectedRoute } from '../components/ProtectedRoute'
 import WorkbenchLayout from '../components/WorkbenchLayout'
 import { UserProvider } from '../contexts/UserContext'
@@ -41,6 +42,10 @@ export const routes: RouteObject[] = [
         path: 'trunk-number',
         element: <TrunkNumber />,
       },
+      {
+        path: 'call-task',
+        element: <CallTask />,
+      },
     ],
   },
 ]
@@ -54,5 +59,6 @@ export const ROUTE_PATHS = {
   DASHBOARD: '/dashboard',
   HOME: '/',
   TRUNK_NUMBER: '/trunk-number',
+  CALL_TASK: '/call-task',
 } as const
 

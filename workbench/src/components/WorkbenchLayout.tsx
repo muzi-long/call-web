@@ -1,5 +1,5 @@
 import { Layout, Menu, Typography, Button, Dropdown, MenuProps } from 'antd'
-import { UserOutlined, DashboardOutlined, LogoutOutlined, PhoneOutlined } from '@ant-design/icons'
+import { UserOutlined, DashboardOutlined, LogoutOutlined, PhoneOutlined, SoundOutlined } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { logout } from '@common/api/auth'
 import { removeToken } from '@common/utils/auth'
@@ -31,6 +31,9 @@ function WorkbenchLayoutInner() {
 
   // 根据当前路由确定选中的菜单项
   const getSelectedKey = () => {
+    if (location.pathname.startsWith('/call-task')) {
+      return '3'
+    }
     if (location.pathname.startsWith('/trunk-number')) {
       return '2'
     }
@@ -59,6 +62,8 @@ function WorkbenchLayoutInner() {
       navigate(ROUTE_PATHS.DASHBOARD)
     } else if (key === '2') {
       navigate(ROUTE_PATHS.TRUNK_NUMBER)
+    } else if (key === '3') {
+      navigate(ROUTE_PATHS.CALL_TASK)
     }
   }
 
@@ -111,6 +116,11 @@ function WorkbenchLayoutInner() {
                 key: '2',
                 icon: <PhoneOutlined />,
                 label: '中继号码',
+              },
+              {
+                key: '3',
+                icon: <SoundOutlined />,
+                label: '外呼任务',
               },
             ]}
           />
