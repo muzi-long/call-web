@@ -38,8 +38,8 @@ function TrunkNumber() {
 
   // 方向映射
   const directionMap: Record<string, { text: string; color: string }> = {
-    in: { text: '呼入', color: 'blue' },
-    out: { text: '呼出', color: 'green' },
+    inbound: { text: '呼入', color: 'blue' },
+    outbound: { text: '呼出', color: 'green' },
     all: { text: '呼入呼出', color: 'purple' },
   }
 
@@ -72,7 +72,7 @@ function TrunkNumber() {
       dataIndex: 'direction',
       key: 'direction',
       width: 120,
-      render: (direction: 'in' | 'out' | 'all') => {
+      render: (direction: 'inbound' | 'outbound' | 'all') => {
         const directionInfo = directionMap[direction] || { text: '未知', color: 'default' }
         return <Tag color={directionInfo.color}>{directionInfo.text}</Tag>
       },

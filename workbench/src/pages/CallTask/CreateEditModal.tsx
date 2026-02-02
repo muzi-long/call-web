@@ -66,7 +66,7 @@ function CreateEditModal({ visible, taskId, onClose, onSuccess }: CreateEditModa
       getCurrentEnterpriseTrunkNumbers()
         .then((data) => {
           // 只获取可外呼的号码
-          const outboundNumbers = data.filter((item) => item.direction === 'out' || item.direction === 'all')
+          const outboundNumbers = data.filter((item) => item.direction === 'outbound' || item.direction === 'all')
           setTrunkNumbers(outboundNumbers)
         })
         .catch((error) => {

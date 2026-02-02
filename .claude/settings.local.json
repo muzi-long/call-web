@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate login page styling with background image\n\n- Changed login page background from gradient to image\n- Added login-bg.png to static assets\n- Updated background styling for better visual appearance\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(find:*)",
+      "Bash(tree:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

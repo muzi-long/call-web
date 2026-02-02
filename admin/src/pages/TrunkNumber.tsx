@@ -343,10 +343,10 @@ function TrunkNumber() {
       dataIndex: 'direction',
       key: 'direction',
       width: 120,
-      render: (direction: 'in' | 'out' | 'all') => {
-        const directionMap: Record<'in' | 'out' | 'all', { text: string; color: string }> = {
-          in: { text: '呼入', color: 'blue' },
-          out: { text: '呼出', color: 'green' },
+      render: (direction: 'inbound' | 'outbound' | 'all') => {
+        const directionMap: Record<'inbound' | 'outbound' | 'all', { text: string; color: string }> = {
+          inbound: { text: '呼入', color: 'blue' },
+          outbound: { text: '呼出', color: 'green' },
           all: { text: '呼入呼出', color: 'purple' },
         }
         const config = directionMap[direction] || { text: direction, color: 'default' }
@@ -444,8 +444,8 @@ function TrunkNumber() {
             value={searchParams.direction}
             onChange={(value) => handleSearchChange('direction', value || '')}
           >
-            <Select.Option value="in">呼入</Select.Option>
-            <Select.Option value="out">呼出</Select.Option>
+            <Select.Option value="inbound">呼入</Select.Option>
+            <Select.Option value="outbound">呼出</Select.Option>
             <Select.Option value="all">呼入呼出</Select.Option>
           </Select>
           <Select
