@@ -10,9 +10,13 @@ import {
   message,
   Popconfirm,
   Tag,
+  Checkbox,
+  Spin,
+  Tree,
 } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, DeleteOutlined, TeamOutlined, KeyOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
+import type { DataNode } from 'antd/es/tree'
 import {
   getAgentList,
   createAgent,
@@ -24,7 +28,72 @@ import {
 } from '../api/agent'
 import { type AgentInfo } from '../api/enterprise'
 import { getAllEnterprises, type EnterpriseInfo } from '../api/enterprise'
+import {
+  getRoleList,
+  getAgentRoles,
+  assignRolesToAgent,
+  getPermissionList,
+  getAgentPermissions,
+  assignPermissionsToAgent,
+  type RoleInfo,
+  type PermissionInfo,
+} from '../api/role'
 import { formatDateTime } from '@common/utils/date'
+
+/**
+ * 将权限树转换为 Tree 组件需要的数据格式
+ */
+const convertToTreeData = (permissions: PermissionInfo[]): DataNode[] => {
+  return permissions.map((perm) => ({
+    key: perm.id,
+    title: `${perm.name} (${perm.code})`,
+    children: perm.children && perm.children.length > 0 ? convertToTreeData(perm.children) : undefined,
+  }))
+}
+
+/**
+ * 从权限树中提取所有权限ID
+ */
+const extractAllPermissionIds = (permissions: PermissionInfo[]): number[] => {
+  const ids: number[] = []
+  const traverse = (perms: PermissionInfo[]) => {
+    for (const perm of perms) {
+      ids.push(perm.id)
+      if (perm.children && perm.children.length > 0) {
+        traverse(perm.children)
+      }
+    }
+  }
+  traverse(permissions)
+  return ids
+}
+
+/**
+ * 从已选权限中提取叶子节点ID（用于Tree组件回显）
+ */
+const extractLeafPermissionIds = (
+  selectedIds: number[],
+  allPermissions: PermissionInfo[]
+): number[] => {
+  const selectedSet = new Set(selectedIds)
+  const leafIds: number[] = []
+
+  const traverse = (perms: PermissionInfo[]) => {
+    for (const perm of perms) {
+      const hasChildren = perm.children && perm.children.length > 0
+      if (hasChildren) {
+        traverse(perm.children!)
+      } else {
+        if (selectedSet.has(perm.id)) {
+          leafIds.push(perm.id)
+        }
+      }
+    }
+  }
+
+  traverse(allPermissions)
+  return leafIds
+}
 
 function Agent() {
   const [form] = Form.useForm()
@@ -38,11 +107,27 @@ function Agent() {
   // 所有企业列表（用于新增时的下拉选择）
   const [allEnterprises, setAllEnterprises] = useState<EnterpriseInfo[]>([])
 
+  // 角色分配相关状态
+  const [roleModalVisible, setRoleModalVisible] = useState(false)
+  const [selectedAgent, setSelectedAgent] = useState<AgentInfo | null>(null)
+  const [allRoles, setAllRoles] = useState<RoleInfo[]>([])
+  const [checkedRoleIds, setCheckedRoleIds] = useState<number[]>([])
+  const [roleLoading, setRoleLoading] = useState(false)
+
+  // 权限分配相关状态
+  const [permissionModalVisible, setPermissionModalVisible] = useState(false)
+  const [permissionAgent, setPermissionAgent] = useState<AgentInfo | null>(null)
+  const [allPermissions, setAllPermissions] = useState<PermissionInfo[]>([])
+  const [checkedPermissionIds, setCheckedPermissionIds] = useState<number[]>([])
+  const [permissionLoading, setPermissionLoading] = useState(false)
+
   // 用于防止重复请求
   const loadingRef = useRef(false)
   const prevParamsRef = useRef<string>('')
   const enterprisesLoadingRef = useRef(false)
   const enterprisesLoadedRef = useRef(false)
+  const rolesLoadedRef = useRef(false)
+  const permissionsLoadedRef = useRef(false)
 
   // 加载 Agent 列表
   const loadData = useCallback(async (force = false) => {
@@ -103,6 +188,36 @@ function Agent() {
     }
   }, [])
 
+  // 加载所有角色列表（用于角色分配）
+  const loadAllRoles = useCallback(async () => {
+    if (rolesLoadedRef.current) {
+      return
+    }
+    try {
+      const roles = await getRoleList()
+      setAllRoles(roles || [])
+      rolesLoadedRef.current = true
+    } catch (error) {
+      console.error('加载角色列表失败:', error)
+      setAllRoles([])
+    }
+  }, [])
+
+  // 加载所有权限列表（用于权限分配）
+  const loadAllPermissions = useCallback(async () => {
+    if (permissionsLoadedRef.current) {
+      return
+    }
+    try {
+      const permissions = await getPermissionList()
+      setAllPermissions(permissions || [])
+      permissionsLoadedRef.current = true
+    } catch (error) {
+      console.error('加载权限列表失败:', error)
+      setAllPermissions([])
+    }
+  }, [])
+
   useEffect(() => {
     loadData()
   }, [loadData])
@@ -110,6 +225,8 @@ function Agent() {
   // 组件加载时获取所有企业列表
   useEffect(() => {
     loadAllEnterprises()
+    loadAllRoles()
+    loadAllPermissions()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -226,6 +343,141 @@ function Agent() {
     }
   }
 
+  // 打开角色分配弹窗
+  const handleOpenRoleModal = async (record: AgentInfo) => {
+    setSelectedAgent(record)
+    setRoleLoading(true)
+    setRoleModalVisible(true)
+
+    try {
+      // 获取用户当前的角色
+      const response = await getAgentRoles(record.id)
+      const assignedRoleIds = (response.roles || []).map((r) => r.id)
+      setCheckedRoleIds(assignedRoleIds)
+    } catch (error) {
+      console.error('加载用户角色失败:', error)
+      setCheckedRoleIds([])
+    } finally {
+      setRoleLoading(false)
+    }
+  }
+
+  // 关闭角色分配弹窗
+  const handleCloseRoleModal = () => {
+    setRoleModalVisible(false)
+    setSelectedAgent(null)
+    setCheckedRoleIds([])
+  }
+
+  // 角色选择变更
+  const handleRoleChange = (roleId: number, checked: boolean) => {
+    if (checked) {
+      setCheckedRoleIds([...checkedRoleIds, roleId])
+    } else {
+      setCheckedRoleIds(checkedRoleIds.filter((id) => id !== roleId))
+    }
+  }
+
+  // 保存角色分配
+  const handleSaveRoles = async () => {
+    if (!selectedAgent) return
+    try {
+      await assignRolesToAgent({
+        agent_id: selectedAgent.id,
+        role_ids: checkedRoleIds,
+      })
+      message.success('角色分配成功')
+      handleCloseRoleModal()
+    } catch (error) {
+      console.error('角色分配失败:', error)
+    }
+  }
+
+  // 打开权限分配弹窗
+  const handleOpenPermissionModal = async (record: AgentInfo) => {
+    setPermissionAgent(record)
+    setPermissionLoading(true)
+    setPermissionModalVisible(true)
+
+    try {
+      // 获取用户当前的权限
+      const response = await getAgentPermissions(record.id)
+      const assignedPermissionIds = extractAllPermissionIds(response.permissions || [])
+      // 只传叶子节点ID给Tree组件，父节点会自动计算状态
+      const leafIds = extractLeafPermissionIds(assignedPermissionIds, allPermissions)
+      setCheckedPermissionIds(leafIds)
+    } catch (error) {
+      console.error('加载用户权限失败:', error)
+      setCheckedPermissionIds([])
+    } finally {
+      setPermissionLoading(false)
+    }
+  }
+
+  // 关闭权限分配弹窗
+  const handleClosePermissionModal = () => {
+    setPermissionModalVisible(false)
+    setPermissionAgent(null)
+    setCheckedPermissionIds([])
+  }
+
+  // 权限选择变更
+  const handlePermissionCheck = (
+    checkedKeys: React.Key[] | { checked: React.Key[]; halfChecked: React.Key[] },
+    info: any
+  ) => {
+    // 获取选中的节点（不包括半选中）
+    const keys = Array.isArray(checkedKeys) ? checkedKeys : checkedKeys.checked
+    setCheckedPermissionIds(keys.map((k) => Number(k)))
+  }
+
+  /**
+   * 根据选中的叶子节点，计算所有需要保存的权限ID（包括半选中的父节点）
+   */
+  const getAllCheckedAndHalfCheckedIds = (checkedIds: number[], permissions: PermissionInfo[]): number[] => {
+    const checkedSet = new Set(checkedIds)
+    const result = new Set<number>(checkedIds)
+
+    const traverse = (perms: PermissionInfo[]): boolean => {
+      let hasCheckedChild = false
+      for (const perm of perms) {
+        const hasChildren = perm.children && perm.children.length > 0
+        if (hasChildren) {
+          const childHasChecked = traverse(perm.children!)
+          if (childHasChecked) {
+            result.add(perm.id)
+            hasCheckedChild = true
+          }
+        } else {
+          if (checkedSet.has(perm.id)) {
+            hasCheckedChild = true
+          }
+        }
+      }
+      return hasCheckedChild
+    }
+
+    traverse(permissions)
+    return Array.from(result)
+  }
+
+  // 保存权限分配
+  const handleSavePermissions = async () => {
+    if (!permissionAgent) return
+    try {
+      // 保存时加上半选中的父节点
+      const allIds = getAllCheckedAndHalfCheckedIds(checkedPermissionIds, allPermissions)
+      await assignPermissionsToAgent({
+        agent_id: permissionAgent.id,
+        permission_ids: allIds,
+      })
+      message.success('权限分配成功')
+      handleClosePermissionModal()
+    } catch (error) {
+      console.error('权限分配失败:', error)
+    }
+  }
+
   // 表格列定义
   const columns: ColumnsType<AgentInfo> = [
     {
@@ -315,10 +567,26 @@ function Agent() {
     {
       title: '操作',
       key: 'action',
-      width: 150,
+      width: 280,
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            icon={<TeamOutlined />}
+            onClick={() => handleOpenRoleModal(record)}
+          >
+            角色
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<KeyOutlined />}
+            onClick={() => handleOpenPermissionModal(record)}
+          >
+            权限
+          </Button>
           <Button
             type="link"
             size="small"
@@ -546,6 +814,75 @@ function Agent() {
             </Form.Item>
           )}
         </Form>
+      </Modal>
+
+      {/* 角色分配弹窗 */}
+      <Modal
+        title={`分配角色 - ${selectedAgent?.display_name || selectedAgent?.username || ''}`}
+        open={roleModalVisible}
+        onOk={handleSaveRoles}
+        onCancel={handleCloseRoleModal}
+        okText="保存"
+        cancelText="取消"
+        width={500}
+      >
+        {roleLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Spin tip="加载中..." />
+          </div>
+        ) : allRoles.length > 0 ? (
+          <div style={{ maxHeight: 400, overflow: 'auto' }}>
+            {allRoles.map((role) => (
+              <div key={role.id} style={{ marginBottom: 12 }}>
+                <Checkbox
+                  checked={checkedRoleIds.includes(role.id)}
+                  onChange={(e) => handleRoleChange(role.id, e.target.checked)}
+                >
+                  <span style={{ fontWeight: 500 }}>{role.name}</span>
+                  {role.description && (
+                    <span style={{ color: '#999', marginLeft: 8 }}>
+                      {role.description}
+                    </span>
+                  )}
+                </Checkbox>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+            暂无角色数据，请先在角色管理中创建角色
+          </div>
+        )}
+      </Modal>
+
+      {/* 权限分配弹窗 */}
+      <Modal
+        title={`分配权限 - ${permissionAgent?.display_name || permissionAgent?.username || ''}`}
+        open={permissionModalVisible}
+        onOk={handleSavePermissions}
+        onCancel={handleClosePermissionModal}
+        okText="保存"
+        cancelText="取消"
+        width={600}
+      >
+        {permissionLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Spin tip="加载中..." />
+          </div>
+        ) : allPermissions.length > 0 ? (
+          <Tree
+            checkable
+            defaultExpandAll
+            checkedKeys={checkedPermissionIds}
+            onCheck={handlePermissionCheck}
+            treeData={convertToTreeData(allPermissions)}
+            style={{ maxHeight: 400, overflow: 'auto' }}
+          />
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+            暂无权限数据，请先在权限管理中创建权限
+          </div>
+        )}
       </Modal>
     </div>
   )

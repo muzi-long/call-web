@@ -1,5 +1,5 @@
 import { Layout, Menu, Typography, Button, Dropdown, MenuProps } from 'antd'
-import { UserOutlined, DashboardOutlined, LogoutOutlined, BankOutlined, ApiOutlined, PhoneOutlined } from '@ant-design/icons'
+import { UserOutlined, DashboardOutlined, LogoutOutlined, BankOutlined, ApiOutlined, PhoneOutlined, SafetyOutlined, KeyOutlined } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { logout } from '@common/api/auth'
 import { removeToken } from '@common/utils/auth'
@@ -31,6 +31,12 @@ function AdminLayout({ children }: AdminLayoutProps) {
     if (location.pathname.startsWith('/trunk')) {
       return '4-1'
     }
+    if (location.pathname.startsWith('/role')) {
+      return '5-1'
+    }
+    if (location.pathname.startsWith('/permission')) {
+      return '5-2'
+    }
     return '1'
   }
 
@@ -59,6 +65,10 @@ function AdminLayout({ children }: AdminLayoutProps) {
       navigate(ROUTE_PATHS.TRUNK)
     } else if (key === '4-2') {
       navigate(ROUTE_PATHS.TRUNK_NUMBER)
+    } else if (key === '5-1') {
+      navigate(ROUTE_PATHS.ROLE)
+    } else if (key === '5-2') {
+      navigate(ROUTE_PATHS.PERMISSION)
     }
   }
 
@@ -120,6 +130,23 @@ function AdminLayout({ children }: AdminLayoutProps) {
                     key: '4-2',
                     icon: <PhoneOutlined />,
                     label: '号码管理',
+                  },
+                ],
+              },
+              {
+                key: '5',
+                icon: <SafetyOutlined />,
+                label: '权限管理',
+                children: [
+                  {
+                    key: '5-1',
+                    icon: <SafetyOutlined />,
+                    label: '角色管理',
+                  },
+                  {
+                    key: '5-2',
+                    icon: <KeyOutlined />,
+                    label: '权限管理',
                   },
                 ],
               },

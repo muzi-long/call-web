@@ -7,6 +7,8 @@ import EnterpriseDetail from '../pages/EnterpriseDetail'
 import Agent from '../pages/Agent'
 import Trunk from '../pages/Trunk'
 import TrunkNumber from '../pages/TrunkNumber'
+import Role from '../pages/Role'
+import Permission from '../pages/Permission'
 import { ProtectedRoute } from '../components/ProtectedRoute'
 import AdminLayout from '../components/AdminLayout'
 
@@ -97,6 +99,26 @@ export const routes: RouteObject[] = [
       </ProtectedRoute>
     ),
   },
+  {
+    path: '/role',
+    element: (
+      <ProtectedRoute>
+        <AdminLayout>
+          <Role />
+        </AdminLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/permission',
+    element: (
+      <ProtectedRoute>
+        <AdminLayout>
+          <Permission />
+        </AdminLayout>
+      </ProtectedRoute>
+    ),
+  },
 ]
 
 /**
@@ -112,5 +134,7 @@ export const ROUTE_PATHS = {
   AGENT: '/agent',
   TRUNK: '/trunk',
   TRUNK_NUMBER: '/trunk-number',
+  ROLE: '/role',
+  PERMISSION: '/permission',
 } as const
 
