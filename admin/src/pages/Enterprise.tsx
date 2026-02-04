@@ -19,7 +19,6 @@ import {
   createEnterprise,
   updateEnterprise,
   deleteEnterprise,
-  getEnterpriseAgents,
   type EnterpriseInfo,
   type EnterpriseListParams,
   type AgentInfo,
@@ -38,8 +37,6 @@ function Enterprise() {
   const [searchParams, setSearchParams] = useState<EnterpriseListParams>({})
   const [modalVisible, setModalVisible] = useState(false)
   const [editingRecord, setEditingRecord] = useState<EnterpriseInfo | null>(null)
-  // 所有 agent 列表（用于新增和编辑时的下拉选择）
-  const [allAgents, setAllAgents] = useState<AgentInfo[]>([])
   // 用于防止重复请求
   const loadingRef = useRef(false)
 
@@ -57,7 +54,6 @@ function Enterprise() {
         page_size: pagination.page_size,
         name: searchParams.name,
         status: searchParams.status,
-        agent_id: searchParams.agent_id,
       }
       const response = await getEnterpriseList(params)
       setDataSource(response.data)
@@ -68,30 +64,7 @@ function Enterprise() {
       setLoading(false)
       loadingRef.current = false
     }
-  }, [pagination.page, pagination.page_size, searchParams.name, searchParams.status, searchParams.agent_id])
-
-  // 用于防止 agent 列表重复请求
-  const agentsLoadingRef = useRef(false)
-  const agentsLoadedRef = useRef(false)
-
-  // 加载所有 agent 列表（用于新增和编辑时的下拉选择）
-  const loadAllAgents = useCallback(async () => {
-    // 如果正在加载或已经加载过，直接返回
-    if (agentsLoadingRef.current || agentsLoadedRef.current) {
-      return
-    }
-    try {
-      agentsLoadingRef.current = true
-      const agents = await getEnterpriseAgents({ ent_id: 0 })
-      setAllAgents(agents)
-      agentsLoadedRef.current = true
-    } catch (error) {
-      console.error('加载 agent 列表失败:', error)
-      setAllAgents([])
-    } finally {
-      agentsLoadingRef.current = false
-    }
-  }, [])
+  }, [pagination.page, pagination.page_size, searchParams.name, searchParams.status])
 
   // 使用 useRef 存储上一次的请求参数，避免重复请求
   const prevParamsRef = useRef<string>('')
@@ -102,7 +75,6 @@ function Enterprise() {
       page_size: pagination.page_size,
       name: searchParams.name,
       status: searchParams.status,
-      agent_id: searchParams.agent_id,
     })
 
     // 如果参数没有变化，不重复请求
@@ -112,13 +84,7 @@ function Enterprise() {
 
     prevParamsRef.current = paramsKey
     loadData()
-  }, [loadData, pagination.page, pagination.page_size, searchParams.name, searchParams.status, searchParams.agent_id])
-
-  // 组件加载时获取所有 agent 列表（只加载一次）
-  useEffect(() => {
-    loadAllAgents()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [loadData, pagination.page, pagination.page_size, searchParams.name, searchParams.status])
 
   // 搜索
   const handleSearch = (value: string) => {
@@ -136,15 +102,10 @@ function Enterprise() {
       form.setFieldsValue({
         name: record.name,
         status: record.status,
-        // 如果所有者是0、null或undefined，则设置为undefined，显示为未选择
-        agent_id: record.owner_agent_id && record.owner_agent_id !== 0 ? record.owner_agent_id : undefined,
       })
     } else {
       setEditingRecord(null)
       form.resetFields()
-      form.setFieldsValue({
-        agent_id: undefined, // 新增时默认为未选择
-      })
     }
     setModalVisible(true)
   }
@@ -160,21 +121,16 @@ function Enterprise() {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
-      // 如果所有者未选择，设置为0
-      const submitData = {
-        ...values,
-        agent_id: values.agent_id || 0,
-      }
       if (editingRecord) {
         // 更新
         await updateEnterprise({
           id: editingRecord.id,
-          ...submitData,
+          ...values,
         })
         message.success('更新成功')
       } else {
         // 创建
-        await createEnterprise(submitData)
+        await createEnterprise(values)
         message.success('创建成功')
       }
       handleCloseModal()
@@ -208,13 +164,11 @@ function Enterprise() {
       title: '企业名称',
       dataIndex: 'name',
       key: 'name',
-      // 不设置 width，让列自适应
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      // 不设置 width，让列自适应
       render: (status: number) => {
         if (status === 1) {
           return <Tag color="success">正常</Tag>
@@ -228,9 +182,8 @@ function Enterprise() {
       title: '所有者',
       dataIndex: 'owner_agent',
       key: 'owner_agent',
-      // 不设置 width，让列自适应
-      render: (ownerAgent: AgentInfo | undefined, record: EnterpriseInfo) => {
-        return ownerAgent?.display_name || record.owner_agent_id || '-'
+      render: (ownerAgent: AgentInfo | undefined) => {
+        return ownerAgent?.display_name || '-'
       },
     },
     {
@@ -358,30 +311,6 @@ function Enterprise() {
               <Select.Option value={2}>禁用</Select.Option>
             </Select>
           </Form.Item>
-
-          <Form.Item
-            name="agent_id"
-            label="所有者"
-            initialValue={undefined}
-          >
-            <Select
-              placeholder="请选择所有者（可选）"
-              style={{ width: '100%' }}
-              allowClear
-              showSearch
-              filterOption={(input, option) => {
-                const text = typeof option?.children === 'string' ? option.children : String(option?.children || '')
-                return text.toLowerCase().includes(input.toLowerCase())
-              }}
-              notFoundContent={allAgents.length === 0 ? '加载中...' : '暂无数据'}
-            >
-              {allAgents.map((agent) => (
-                <Select.Option key={agent.id} value={agent.id}>
-                  {agent.display_name} ({agent.username})
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
         </Form>
       </Modal>
     </div>
@@ -389,4 +318,3 @@ function Enterprise() {
 }
 
 export default Enterprise
-

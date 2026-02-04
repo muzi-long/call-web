@@ -27,8 +27,7 @@ export interface EnterpriseInfo {
   id: number
   name: string
   status: number
-  owner_agent_id: number
-  owner_agent?: AgentInfo // 所有者Agent信息（可选）
+  owner_agent?: AgentInfo // 所有者Agent信息（从enterprise_agent表role=owner获取）
   created_at: string
   updated_at: string
 }
@@ -47,7 +46,6 @@ export interface EnterpriseListResponse {
 export interface EnterpriseCreateParams {
   name: string
   status?: number
-  agent_id?: number
 }
 
 /**
@@ -57,7 +55,6 @@ export interface EnterpriseUpdateParams {
   id: number
   name: string
   status?: number
-  agent_id?: number
 }
 
 /**
@@ -74,6 +71,7 @@ export interface EnterpriseAgentBindParams {
   ent_id: number
   agent_id: number
   action?: 'bind' | 'unbind' // 操作类型：bind-绑定，unbind-解绑，默认为bind
+  role?: 'owner' | 'admin' | 'member' // 角色：owner-所有者，admin-管理员，member-普通成员，默认为member
 }
 
 /**
@@ -101,6 +99,14 @@ export interface AgentInfo {
   mobile: string
   created_at: string
   updated_at: string
+}
+
+/**
+ * 企业下的Agent信息（包含角色）
+ */
+export interface EnterpriseAgentInfo extends AgentInfo {
+  role: string  // 用户在企业中的角色: owner/admin/member
+  join_at: string // 加入企业时间
 }
 
 /**
@@ -160,20 +166,24 @@ export const deleteEnterprise = async (params: EnterpriseDeleteParams): Promise<
  * await bindAgentToEnterprise({ ent_id: 1, agent_id: 2, action: 'unbind' })
  */
 export const bindAgentToEnterprise = async (params: EnterpriseAgentBindParams): Promise<void> => {
-  const { action = 'bind', ent_id, agent_id } = params
+  const { action = 'bind', ent_id, agent_id, role } = params
 
   // 统一使用 POST 方法，通过 action 参数区分绑定和解绑
-  // 如果后端接口设计为：POST /admin/ent/agent，body: { ent_id, agent_id, action: 'bind'|'unbind' }
-  return await request.post<void>('/admin/ent/agent', {
+  // 如果后端接口设计为：POST /admin/ent/agent，body: { ent_id, agent_id, action: 'bind'|'unbind', role }
+  const body: any = {
     ent_id,
     agent_id,
     action
-  })
+  }
+  if (role) {
+    body.role = role
+  }
+  return await request.post<void>('/admin/ent/agent', body)
 }
 
 /**
  * 绑定Agent到企业（便捷方法）
- * @param params - 请求参数，包含 ent_id 和 agent_id
+ * @param params - 请求参数，包含 ent_id、agent_id 和可选的 role
  * @returns Promise<void>
  */
 export const bindAgent = async (params: Omit<EnterpriseAgentBindParams, 'action'>): Promise<void> => {
@@ -190,12 +200,12 @@ export const unbindAgent = async (params: Omit<EnterpriseAgentBindParams, 'actio
 }
 
 /**
- * 获取企业下的所有Agent
+ * 获取企业下的所有Agent（包含角色信息）
  * @param params - 请求参数，包含 ent_id
- * @returns Agent列表
+ * @returns Agent列表（包含角色）
  */
-export const getEnterpriseAgents = async (params: EnterpriseAgentsParams): Promise<AgentInfo[]> => {
-  return await request.get<AgentInfo[]>('/admin/ent/agents', params)
+export const getEnterpriseAgents = async (params: EnterpriseAgentsParams): Promise<EnterpriseAgentInfo[]> => {
+  return await request.get<EnterpriseAgentInfo[]>('/admin/ent/agents', params)
 }
 
 /**

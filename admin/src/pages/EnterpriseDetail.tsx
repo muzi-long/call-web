@@ -22,6 +22,7 @@ import {
   bindAgent,
   unbindAgent,
   type EnterpriseInfo,
+  type EnterpriseAgentInfo,
   type AgentInfo,
 } from '../api/enterprise'
 import { getAgentList } from '../api/agent'
@@ -36,7 +37,7 @@ function EnterpriseDetail() {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [enterpriseInfo, setEnterpriseInfo] = useState<EnterpriseInfo | null>(null)
-  const [agents, setAgents] = useState<AgentInfo[]>([])
+  const [agents, setAgents] = useState<EnterpriseAgentInfo[]>([])
   const [agentsLoading, setAgentsLoading] = useState(false)
   const [bindModalVisible, setBindModalVisible] = useState(false)
   const [allAgents, setAllAgents] = useState<AgentInfo[]>([])
@@ -196,7 +197,7 @@ function EnterpriseDetail() {
         message.error('企业ID不存在')
         return
       }
-      await bindAgent({ ent_id: Number(id), agent_id: values.agent_id })
+      await bindAgent({ ent_id: Number(id), agent_id: values.agent_id, role: values.role })
       message.success('绑定成功')
       handleCloseBindModal()
       // 刷新Agent列表
@@ -334,7 +335,7 @@ function EnterpriseDetail() {
   ]
 
   // Agent表格列定义
-  const agentColumns: ColumnsType<AgentInfo> = [
+  const agentColumns: ColumnsType<EnterpriseAgentInfo> = [
     {
       title: 'ID',
       dataIndex: 'id',
@@ -350,6 +351,21 @@ function EnterpriseDetail() {
       title: '显示名称',
       dataIndex: 'display_name',
       key: 'display_name',
+    },
+    {
+      title: '角色',
+      dataIndex: 'role',
+      key: 'role',
+      width: 120,
+      render: (role: string) => {
+        const roleMap: Record<string, { text: string; color: string }> = {
+          owner: { text: '所有者', color: 'gold' },
+          admin: { text: '管理员', color: 'blue' },
+          member: { text: '成员', color: 'default' },
+        }
+        const config = roleMap[role] || { text: role || '成员', color: 'default' }
+        return <Tag color={config.color}>{config.text}</Tag>
+      },
     },
     {
       title: '邮箱',
@@ -393,16 +409,9 @@ function EnterpriseDetail() {
       key: 'mobile',
     },
     {
-      title: '创建时间',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 180,
-      render: (time: string) => formatDateTime(time),
-    },
-    {
-      title: '更新时间',
-      dataIndex: 'updated_at',
-      key: 'updated_at',
+      title: '加入时间',
+      dataIndex: 'join_at',
+      key: 'join_at',
       width: 180,
       render: (time: string) => formatDateTime(time),
     },
@@ -468,7 +477,7 @@ function EnterpriseDetail() {
             )}
           </Descriptions.Item>
           <Descriptions.Item label="所有者">
-            {enterpriseInfo.owner_agent?.display_name || enterpriseInfo.owner_agent_id || '-'}
+            {enterpriseInfo.owner_agent?.display_name || '-'}
           </Descriptions.Item>
           <Descriptions.Item label="创建时间">
             {formatDateTime(enterpriseInfo.created_at)}
@@ -561,6 +570,18 @@ function EnterpriseDetail() {
                     {agent.display_name} ({agent.username})
                   </Select.Option>
                 ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="role"
+            label="角色"
+            initialValue="member"
+            rules={[{ required: true, message: '请选择角色' }]}
+          >
+            <Select placeholder="请选择角色" style={{ width: '100%' }}>
+              <Select.Option value="owner">所有者 (Owner) - 拥有全部权限</Select.Option>
+              <Select.Option value="admin">管理员 (Admin) - 管理权限</Select.Option>
+              <Select.Option value="member">普通成员 (Member) - 基本权限</Select.Option>
             </Select>
           </Form.Item>
         </Form>

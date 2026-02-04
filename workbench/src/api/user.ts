@@ -14,6 +14,7 @@ export interface Enterprise {
   owner_agent_id: number
   is_current: number
   join_at: string
+  role: string // 用户在该企业中的角色: owner/admin/member
   created_at: string
   updated_at: string
 }
@@ -36,6 +37,14 @@ export interface UserInfo {
 }
 
 /**
+ * 用户角色信息
+ */
+export interface UserRoleInfo {
+  user_id: number
+  role: string // 用户在当前企业中的角色: owner/admin/member
+}
+
+/**
  * 获取当前登录用户信息
  * @returns 用户信息
  */
@@ -51,6 +60,14 @@ export const getUserInfo = async (): Promise<UserInfo> => {
  */
 export const switchCurrentEnterprise = async (entId: number): Promise<void> => {
   await request.put<void>('/api/user/switch-enterprise', { ent_id: entId })
+}
+
+/**
+ * 获取当前用户在当前企业中的角色
+ * @returns 用户角色信息
+ */
+export const getUserRole = async (): Promise<UserRoleInfo> => {
+  return await request.get<UserRoleInfo>('/api/user/roles-permissions')
 }
 
 /**
